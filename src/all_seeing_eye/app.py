@@ -10,7 +10,6 @@ from .core.controller import IngestController
 from .core.ingest import parse_diagnostics_line, to_log_entry
 from .core.log_store import LogStore
 from .core.logger import emit
-from .core.metro import MetroTail
 from .core.notifier import Notifier
 from .core.notifier_macos import MacOSNotifier
 from .ui.main_window import MainWindow
@@ -49,8 +48,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     store.subscribe(on_entry)
 
     if args.project:
-        tail = MetroTail(store)
-        tail.start(args.project)
+        controller.start_metro(args.project)
     elif args.stdin:
         emit("info", "StdinMode", {})
         for line in sys.stdin:

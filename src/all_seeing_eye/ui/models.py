@@ -12,6 +12,8 @@ class LogListModel(QtCore.QAbstractListModel):
     LevelRole = QtCore.Qt.ItemDataRole.UserRole + 2
     MessageRole = QtCore.Qt.ItemDataRole.UserRole + 3
     DataRole = QtCore.Qt.ItemDataRole.UserRole + 4
+    SourceRole = QtCore.Qt.ItemDataRole.UserRole + 5
+    EntryRole = QtCore.Qt.ItemDataRole.UserRole + 6
 
     def __init__(self, entries: List[LogEntry] | None = None) -> None:
         super().__init__()
@@ -34,6 +36,17 @@ class LogListModel(QtCore.QAbstractListModel):
             return entry.message
         if role == self.DataRole:
             return entry.data
+        if role == self.SourceRole:
+            return entry.source
+        if role == self.EntryRole:
+            return {
+                "id": entry.id,
+                "timestamp": entry.timestamp.isoformat(),
+                "level": entry.level,
+                "message": entry.message,
+                "source": entry.source,
+                "data": entry.data,
+            }
         return None
 
     def roles(self):  # type: ignore[override]
@@ -42,6 +55,8 @@ class LogListModel(QtCore.QAbstractListModel):
             self.LevelRole: b"level",
             self.MessageRole: b"message",
             self.DataRole: b"data",
+            self.SourceRole: b"source",
+            self.EntryRole: b"entry",
         }
 
     def set_entries(self, entries: List[LogEntry]) -> None:
