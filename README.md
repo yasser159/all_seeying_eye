@@ -2,6 +2,13 @@
 
 Desktop diagnostics viewer for Expo/Metro logs with a strict core/UI split.
 
+## What It Does
+- Ingests structured `[Diagnostics]` JSON logs from:
+  1. WebSocket (recommended): your app pushes logs directly to the desktop app.
+  2. Metro: the desktop app can spawn Metro and parse logs from its stdout.
+- Shows a chronological log timeline with filtering, copy-as-JSON, and a details pane.
+- Sends macOS notifications for `warn` and `error` (with an action to open the app).
+
 ## Setup
 
 ```bash
@@ -25,29 +32,34 @@ pip install -r requirements.txt
 
 ## Run
 
-Start Metro via the app (parses `[Diagnostics]` JSON lines):
+Start the UI:
 
 ```bash
-python -m all_seeing_eye --project "/Users/yasser159/code/React/diabetic_watch_react"
+PYTHONPATH=src python -m all_seeing_eye
 ```
 
-If Metro is already running, you can pipe its output:
+Then, pick a source in the UI:
+- WebSocket tab: click `Start Listening` and send logs to the shown `ws://...` URL.
+- Metro tab: set the Expo project directory and click `Start Metro`.
+
+## CLI Modes (Optional)
+
+Start Metro via CLI (spawns Metro, parses `[Diagnostics]` JSON lines):
 
 ```bash
-# Example: run Expo in another terminal and pipe logs
-python -m all_seeing_eye --stdin
+PYTHONPATH=src python -m all_seeing_eye --project "/Users/yasser159/code/React/diabetic_watch_react"
 ```
 
 Start a WebSocket ingest server (default ws://127.0.0.1:8765):
 
 ```bash
-python -m all_seeing_eye --ws --ws-port 8765
+PYTHONPATH=src python -m all_seeing_eye --ws --ws-port 8765
 ```
 
 If PySide6 is not installed, you can run headless mode:
 
 ```bash
-python -m all_seeing_eye.headless --ws --ws-port 8765
+PYTHONPATH=src python -m all_seeing_eye.headless --ws --ws-port 8765
 ```
 
 Send a diagnostics payload from the app or a script:
