@@ -50,11 +50,14 @@ class IngestController:
     def ws_running(self) -> bool:
         return bool(self._ws_server and self._ws_server.is_running)
 
-    def start_metro(self, project_dir: str) -> None:
+    def start_metro(self, project_dir: str, command: Optional[list[str]] = None) -> None:
         if self._metro and self._metro.is_running:
             return
         self._metro = MetroRunner(self._store, on_state=self._handle_metro_state)
-        self._metro.start(project_dir)
+        if command:
+            self._metro.start_with_command(project_dir, command)
+        else:
+            self._metro.start(project_dir)
 
     def stop_metro(self) -> None:
         if not self._metro:

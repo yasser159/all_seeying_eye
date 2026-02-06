@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import threading
-from typing import Optional, Callable
+from typing import Optional, Callable, Sequence
 
 from .ingest import parse_diagnostics_line, to_log_entry
 from .logger import emit
@@ -31,12 +31,15 @@ class MetroRunner:
         return self._running
 
     def start(self, project_dir: str) -> None:
+        self.start_with_command(project_dir, ["npm", "run", "start"])
+
+    def start_with_command(self, project_dir: str, command: Sequence[str]) -> None:
         if self._thread and self._thread.is_alive():
             return
 
-        emit("info", "MetroStart", {"project": project_dir})
+        emit("info", "MetroStart", {"project": project_dir, "command": list(command)})
         self._proc = subprocess.Popen(
-            ["npm", "run", "start"],
+            list(command),
             cwd=project_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -77,4 +80,3 @@ class MetroRunner:
         self._running = value
         if self._on_state:
             self._on_state(self._running)
-

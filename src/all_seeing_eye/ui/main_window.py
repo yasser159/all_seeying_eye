@@ -6,6 +6,7 @@ from datetime import datetime
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from ..core.controller import IngestController
+from ..core.health import check_tcp_listener
 from ..core.log_store import LogStore
 from .models import LogListModel
 
@@ -184,6 +185,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self._status_timer.timeout.connect(self._refresh_statusbar)
         self._status_timer.start()
 
+        self._health_timer = QtCore.QTimer(self)
+        self._health_timer.setInterval(1000)
+        self._health_timer.timeout.connect(self._refresh_health)
+        self._health_timer.start()
+
     def _show_howto(self) -> None:
         text = (
             "Quick Start\n"
@@ -260,6 +266,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self._metro_dot.setStyleSheet("color: #9aa0a6;")
         self._metro_label = QtWidgets.QLabel("Stopped")
 
+        self._metro_mode = QtWidgets.QComboBox()
+        self._metro_mode.addItems(["expo start (npm run start)", "devlog expo (npm run devlog:expo)"])
+        self._metro_check = QtWidgets.QPushButton("Check 8081")
+        self._metro_8081_dot = QtWidgets.QLabel("●")
+        self._metro_8081_dot.setStyleSheet("color: #9aa0a6;")
+        self._metro_8081_label = QtWidgets.QLabel("8081: unknown")
+
         layout.addWidget(QtWidgets.QLabel("Project"), 0, 0)
         layout.addWidget(self._metro_project, 0, 1, 1, 4)
         layout.addWidget(self._metro_browse, 0, 5)
@@ -267,8 +280,15 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self._metro_dot, 0, 7)
         layout.addWidget(self._metro_label, 0, 8)
 
+        layout.addWidget(QtWidgets.QLabel("Mode"), 1, 0)
+        layout.addWidget(self._metro_mode, 1, 1, 1, 4)
+        layout.addWidget(self._metro_check, 1, 5)
+        layout.addWidget(self._metro_8081_dot, 1, 7)
+        layout.addWidget(self._metro_8081_label, 1, 8)
+
         self._metro_browse.clicked.connect(self._browse_project)
         self._metro_button.clicked.connect(self._toggle_metro)
+        self._metro_check.clicked.connect(self._refresh_health)
 
         return w
 
@@ -356,7 +376,11 @@ class MainWindow(QtWidgets.QMainWindow):
         if self._controller.metro_running():
             self._controller.stop_metro()
         else:
-            self._controller.start_metro(project)
+            mode = self._metro_mode.currentText()
+            if mode.startswith("devlog expo"):
+                self._controller.start_metro(project, command=["npm", "run", "devlog:expo"])
+            else:
+                self._controller.start_metro(project, command=["npm", "run", "start"])
 
     def _browse_project(self) -> None:
         path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Expo Project Directory")
@@ -384,6 +408,16 @@ class MainWindow(QtWidgets.QMainWindow):
             self._metro_label.setText("Stopped")
             self._metro_dot.setStyleSheet("color: #9aa0a6;")
             self._metro_button.setText("Start Metro")
+
+    def _refresh_health(self) -> None:
+        # Keep this UI-only: quick port probe to help users avoid "stale red screen" when Metro isn't up.
+        health = check_tcp_listener("127.0.0.1", 8081)
+        if health.listening:
+            self._metro_8081_dot.setStyleSheet("color: #10b981;")
+            self._metro_8081_label.setText("8081: listening")
+        else:
+            self._metro_8081_dot.setStyleSheet("color: #ef4444;")
+            self._metro_8081_label.setText("8081: not listening")
 
     def _refresh_statusbar(self) -> None:
         total = self._model.rowCount()
