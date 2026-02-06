@@ -4,7 +4,7 @@ import argparse
 import sys
 from typing import Optional
 
-from PySide6 import QtWidgets
+from PySide6 import QtCore, QtWidgets
 
 from .core.controller import IngestController
 from .core.ingest import parse_diagnostics_line, to_log_entry
@@ -63,6 +63,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         emit("warn", "NoSourceConfigured", {})
 
     window.show()
+    # macOS can launch the app without focusing the first window (especially from Finder).
+    QtCore.QTimer.singleShot(0, window.focus_diagnostics)
     return app.exec()
 
 
